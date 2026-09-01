@@ -5,14 +5,19 @@ from django.shortcuts import render, redirect
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta
+
+# ─── Unfold imports ─────────────────────────────────────────────────
+from unfold.sites import UnfoldAdminSite
+from unfold.admin import ModelAdmin, TabularInline
+
 from .models import (
     Vendor, Property, Occupancy, Invoice, Payment, Notification, IPNLog
 )
 
 # -------------------------------
-# Custom Admin Site
+# Custom Admin Site (Unfold-powered)
 # -------------------------------
-class OlailongAdminSite(admin.AdminSite):
+class OlailongAdminSite(UnfoldAdminSite):
     site_header = "Olailong Market Admin"
     site_title = "Olailong Market Admin Portal"
     index_title = "Market Management"
@@ -28,7 +33,7 @@ class OlailongAdminSite(admin.AdminSite):
 admin_site = OlailongAdminSite(name='myadmin')
 
 # -------------------------------
-# Dashboard View
+# Dashboard View (unchanged)
 # -------------------------------
 def dashboard_view(request):
     if not request.user.is_staff:
@@ -88,28 +93,28 @@ def dashboard_view(request):
     return render(request, 'admin/dashboard.html', context)
 
 # -------------------------------
-# Register models with the custom admin site
+# Register models with Unfold ModelAdmin
 # -------------------------------
 @admin.register(Vendor, site=admin_site)
-class VendorAdmin(admin.ModelAdmin):
+class VendorAdmin(ModelAdmin):
     list_display = ('full_name', 'phone_number', 'is_active', 'created_at')
     list_filter = ('is_active',)
     search_fields = ('full_name', 'phone_number', 'national_id')
 
 @admin.register(Property, site=admin_site)
-class PropertyAdmin(admin.ModelAdmin):
+class PropertyAdmin(ModelAdmin):
     list_display = ('code', 'property_type', 'rent_fee', 'sanitation_fee', 'security_fee', 'is_active')
     list_filter = ('property_type', 'is_active')
     search_fields = ('code', 'location')
 
 @admin.register(Occupancy, site=admin_site)
-class OccupancyAdmin(admin.ModelAdmin):
+class OccupancyAdmin(ModelAdmin):
     list_display = ('vendor', 'property', 'start_date', 'end_date', 'is_active')
     list_filter = ('is_active', 'start_date')
     search_fields = ('vendor__full_name', 'property__code')
 
 @admin.register(Invoice, site=admin_site)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(ModelAdmin):
     list_display = ('id', 'vendor', 'property', 'billing_period_start', 'due_date', 'amount', 'status', 'paid_at')
     list_filter = ('status', 'billing_period_start')
     search_fields = ('occupancy__vendor__full_name', 'occupancy__property__code')
@@ -129,18 +134,18 @@ class InvoiceAdmin(admin.ModelAdmin):
     mark_as_overdue.short_description = "Mark selected as overdue"
 
 @admin.register(Payment, site=admin_site)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ModelAdmin):
     list_display = ('transaction_ref', 'invoice', 'amount', 'phone_number', 'status', 'pesapal_order_tracking_id', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('transaction_ref', 'invoice__occupancy__vendor__full_name', 'pesapal_order_tracking_id')
 
 @admin.register(Notification, site=admin_site)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(ModelAdmin):
     list_display = ('vendor', 'sent_at', 'sent_via', 'is_delivered')
     list_filter = ('sent_via', 'is_delivered')
 
 @admin.register(IPNLog, site=admin_site)
-class IPNLogAdmin(admin.ModelAdmin):
+class IPNLogAdmin(ModelAdmin):
     list_display = ('received_at', 'order_tracking_id', 'merchant_reference', 'processed')
     list_filter = ('processed',)
     search_fields = ('order_tracking_id', 'merchant_reference')
