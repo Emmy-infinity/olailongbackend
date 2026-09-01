@@ -1,8 +1,9 @@
 """
-Django settings for olailongmarket project.
+Django settings for olailongmarket project (development – based on production branch).
 """
 
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
@@ -11,32 +12,34 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-# ---------------------------------------------------------------
-# Load environment variables from .env file (if present)
-# ---------------------------------------------------------------
-load_dotenv()
+# ─── Unfold Admin Compatibility Patch ─────────────────────────────────
+from django.contrib.admin.templatetags import admin_list
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+original_node_init = admin_list.InclusionAdminNode.__init__
+
+def tolerant_unfold_node_init(self, parser, token, *args, **kwargs):
+    try:
+        return original_node_init(self, parser, token, *args, **kwargs)
+    except TypeError:
+        return original_node_init(self, parser, *args, **kwargs)
+
+admin_list.InclusionAdminNode.__init__ = tolerant_unfold_node_init
+
+# ─── Load Environment ──────────────────────────────────────────────────
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ---------------------------------------------------------------
-# Security
-# ---------------------------------------------------------------
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "django-insecure-_!@%-(@p73z834wk&0amac1_pcnb1a6-^9w+gor$=5w#lz6@zy",
-)
-
+# ─── Security ────────────────────────────────────────────────────────
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-me")
+# For development, default DEBUG=True. In production, set DEBUG=False in env.
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,olailongmarket.onrender.com"
+    "localhost,127.0.0.1,olailongmarket-backend.onrender.com"
 ).split(",")
 
-# ---------------------------------------------------------------
-# CORS & CSRF
-# ---------------------------------------------------------------
+# ─── CORS & CSRF ─────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -44,17 +47,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     os.getenv("FRONTEND_URL", "https://olailongmarket-pwa.onrender.com"),
 ]
-CORS_ALLOWED_ORIGINS = list(set(filter(None, CORS_ALLOWED_ORIGINS)))
-
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "https://olailongmarket-backend.onrender.com",
 ]
 
-# ---------------------------------------------------------------
-# Production security settings (only when DEBUG=False)
-# ---------------------------------------------------------------
+# ─── Security Settings for Production (only applied when DEBUG=False) ──
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     CSRF_COOKIE_SECURE = True
@@ -64,27 +63,51 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-# ---------------------------------------------------------------
-# Application definition
-# ---------------------------------------------------------------
+# ─── REST Framework & JWT ───────────────────────────────────────────
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    # Keep endpoints protected by default – add explicit public views if needed
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+}
+
+# ─── Installed Apps ────────────────────────────────────────────────────
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
+    "cloudinary_storage",
     "django.contrib.admin",
+    "cloudinary",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "corsheaders",
     "rest_framework",
     "django_filters",
-    "rest_framework_simplejwt",
-    "cloudinary",
-    "cloudinary_storage",
-
-    "revenuecollection",
+    "revenuecollection.apps.RevenuecollectionConfig",  # ✅ Update with your actual app config
 ]
 
+# ─── Middleware (OPTIMIZED ORDER) ────────────────────────────────────
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
@@ -118,22 +141,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "olailongmarket.wsgi.application"
 
-# ---------------------------------------------------------------
-# Database
-# ---------------------------------------------------------------
+# ─── Database (OPTIMIZED) ────────────────────────────────────────────
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600,
+        conn_max_age=600
     )
 }
 
 if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
     DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 10
 
-# ---------------------------------------------------------------
-# Password validation
-# ---------------------------------------------------------------
+# ─── Password Validation ──────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -141,29 +160,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ---------------------------------------------------------------
-# Internationalization
-# ---------------------------------------------------------------
+# ─── Internationalization ──────────────────────────────────────────
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Africa/Kampala"
+TIME_ZONE = "Africa/Kampala"   # or "UTC" if preferred
 USE_I18N = True
 USE_TZ = True
 
-# ---------------------------------------------------------------
-# Static files & WhiteNoise
-# ---------------------------------------------------------------
+# ─── Static & Media ────────────────────────────────────────────────
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-
-WHITENOISE_USE_FINDERS = True
-WHITENOISE_AUTOREFRESH = DEBUG
-WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
-
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Django 4.2+ storage configuration
+# Define STATICFILES_STORAGE (avoids Cloudinary collectstatic issues)
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+# ─── STORAGES (Django 4.2+) ─────────────────────────────────────────
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -173,70 +185,32 @@ STORAGES = {
     },
 }
 
-# ---------------------------------------------------------------
-# Cloudinary configuration (HARDCODED – replace with your own if needed)
-# ---------------------------------------------------------------
-CLOUDINARY_CLOUD_NAME = "dtll1o9u0"
-CLOUDINARY_API_KEY = "387833656525477"
-CLOUDINARY_API_SECRET = "AmTSvrVHKiLlN2ArzFgctGx_-70"
+# ─── WhiteNoise (serves static files in production) ──────────────────
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
+# ─── Cloudinary ────────────────────────────────────────────────────
 cloudinary.config(
-    cloud_name=CLOUDINARY_CLOUD_NAME,
-    api_key=CLOUDINARY_API_KEY,
-    api_secret=CLOUDINARY_API_SECRET,
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "dtll1o9u0"),
+    api_key=os.getenv("CLOUDINARY_API_KEY", "387833656525477"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET", "AmTSvrVHKiLlN2ArzFgctGx_-70"),
     secure=True,
 )
 
 CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
-    "API_KEY": CLOUDINARY_API_KEY,
-    "API_SECRET": CLOUDINARY_API_SECRET,
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", "dtll1o9u0"),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", "387833656525477"),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", "AmTSvrVHKiLlN2ArzFgctGx_-70"),
 }
 
-# ---------------------------------------------------------------
-# Django REST Framework & JWT
-# ---------------------------------------------------------------
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
-    ],
-}
+# ─── Flutterwave (payment gateway) ─────────────────────────────────
+FLW_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY", "")
+FLW_SECRET_HASH = os.getenv("FLUTTERWAVE_WEBHOOK_SECRET_HASH", "")
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "UPDATE_LAST_LOGIN": False,
-}
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")  # Use local for dev
 
-# ---------------------------------------------------------------
-# Pesapal API configuration
-# ---------------------------------------------------------------
-PESAPAL_CONSUMER_KEY = os.getenv("PESAPAL_CONSUMER_KEY", "your-consumer-key")
-PESAPAL_CONSUMER_SECRET = os.getenv("PESAPAL_CONSUMER_SECRET", "your-consumer-secret")
-PESAPAL_BASE_URL = os.getenv(
-    "PESAPAL_BASE_URL", "https://pay.pesapal.com/v3"
-)
-
-# ---------------------------------------------------------------
-# Base URL for building absolute URLs
-# ---------------------------------------------------------------
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-
-# ---------------------------------------------------------------
-# Caching
-# ---------------------------------------------------------------
+# ─── Caching ──────────────────────────────────────────────────────
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -244,9 +218,7 @@ CACHES = {
     }
 }
 
-# ---------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------
+# ─── Logging ──────────────────────────────────────────────────────
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
