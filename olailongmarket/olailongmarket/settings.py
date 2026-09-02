@@ -56,7 +56,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # 🔓 For DEBUG only – uncomment to allow all origins (temporary testing)
-# CORS_ALLOW_ALL_ORIGINS = True   # ⚠️ Remove for production
+ CORS_ALLOW_ALL_ORIGINS = True   # ⚠️ Remove for production
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "https://olailongmarket-backend.onrender.com",
