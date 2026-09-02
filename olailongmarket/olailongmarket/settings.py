@@ -13,19 +13,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-# ─── Unfold Admin Compatibility Patch ─────────────────────────────────
-from django.contrib.admin.templatetags import base
-from unfold.templatetags import unfold_list
 
-class FixedInclusionAdminNode(base.InclusionAdminNode):
-    def __init__(self, parser, token, *args, **kwargs):
-        super().__init__(parser, token, *args, **kwargs)
-
-# Replace the class in the unfold module (so result_list_tag uses it)
-unfold_list.InclusionAdminNode = FixedInclusionAdminNode
-# Also patch the base class for safety
-base.InclusionAdminNode = FixedInclusionAdminNode
-# ─── Load Environment ──────────────────────────────────────────────────
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
