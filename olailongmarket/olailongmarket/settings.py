@@ -3,11 +3,12 @@ Django settings for olailongmarket project (development – based on production 
 """
 
 import os
-import sys
 from pathlib import Path
 from datetime import timedelta
+
 import dj_database_url
 from dotenv import load_dotenv
+
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
@@ -31,14 +32,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ─── Security ────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-me")
-# For development, default DEBUG=True. In production, set DEBUG=False in env.
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'olailongmarket-backend.onrender.com',   # keep existing
-    'olailongbackend.onrender.com',          # add this
+    "localhost",
+    "127.0.0.1",
+    "olailongmarket-backend.onrender.com",
+    "olailongbackend.onrender.com",
 ]
 
 # ─── CORS & CSRF ─────────────────────────────────────────────────────
@@ -70,7 +70,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # Keep endpoints protected by default – add explicit public views if needed
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -106,10 +105,10 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "django_filters",
-    "revenuecollection.apps.RevenuecollectionConfig",  # ✅ Update with your actual app config
+    "revenuecollection.apps.RevenuecollectionConfig",
 ]
 
-# ─── Middleware (OPTIMIZED ORDER) ────────────────────────────────────
+# ─── Middleware ────────────────────────────────────────────────────
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
@@ -143,11 +142,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "olailongmarket.wsgi.application"
 
-# ─── Database (OPTIMIZED) ────────────────────────────────────────────
+# ─── Database ──────────────────────────────────────────────────────
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600
+        conn_max_age=600,
     )
 }
 
@@ -164,7 +163,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ─── Internationalization ──────────────────────────────────────────
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Africa/Kampala"   # or "UTC" if preferred
+TIME_ZONE = "Africa/Kampala"
 USE_I18N = True
 USE_TZ = True
 
@@ -174,10 +173,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Define STATICFILES_STORAGE (avoids Cloudinary collectstatic issues)
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-# ─── STORAGES (Django 4.2+) ─────────────────────────────────────────
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -187,7 +184,6 @@ STORAGES = {
     },
 }
 
-# ─── WhiteNoise (serves static files in production) ──────────────────
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
@@ -206,11 +202,11 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", "AmTSvrVHKiLlN2ArzFgctGx_-70"),
 }
 
-# ─── Flutterwave (payment gateway) ─────────────────────────────────
+# ─── Flutterwave ──────────────────────────────────────────────────
 FLW_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY", "")
 FLW_SECRET_HASH = os.getenv("FLUTTERWAVE_WEBHOOK_SECRET_HASH", "")
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")  # Use local for dev
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 # ─── Caching ──────────────────────────────────────────────────────
 CACHES = {
