@@ -34,10 +34,12 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-me")
 # For development, default DEBUG=True. In production, set DEBUG=False in env.
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,olailongmarket-backend.onrender.com"
-).split(",")
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'olailongmarket-backend.onrender.com',   # keep existing
+    'olailongbackend.onrender.com',          # add this
+]
 
 # ─── CORS & CSRF ─────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [
