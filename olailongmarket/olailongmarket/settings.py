@@ -29,7 +29,7 @@ ALLOWED_HOSTS = [
 ]
 
 # ─── CORS & CSRF (UPDATED) ──────────────────────────────────────────
-# Read frontend URL from environment
+# Read frontend URL from environment, fallback to the PWA URL
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://olailongmarket-pwa.onrender.com")
 
 CORS_ALLOWED_ORIGINS = [
@@ -37,10 +37,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
+    "https://olailongfrontend.onrender.com",   # ✅ ADDED – your actual frontend
     FRONTEND_URL,
 ]
 
-# ✅ Explicitly allow common headers – this fixes many CORS issues
+# Explicitly allow common headers – fixes many CORS issues
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -56,7 +57,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # 🔓 For DEBUG only – uncomment to allow all origins (temporary testing)
- CORS_ALLOW_ALL_ORIGINS = True   # ⚠️ Remove for production
+# CORS_ALLOW_ALL_ORIGINS = True   # ⚠️ Remove for production
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "https://olailongmarket-backend.onrender.com",
