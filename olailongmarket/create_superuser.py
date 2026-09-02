@@ -2,7 +2,7 @@ import os
 import django
 
 # 1. Point to your Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings') # Replace 'myproject' with your folder name
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'olailongmarket.settings') # Replace 'myproject' with your folder name
 django.setup()
 
 from django.contrib.auth import get_user_model
