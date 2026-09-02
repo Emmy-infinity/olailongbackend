@@ -1,5 +1,6 @@
 asgiref
 Django
+django-filter>=24.0,<25.0
 django-cors-headers
 djangorestframework
 cloudinary
