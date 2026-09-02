@@ -28,15 +28,35 @@ ALLOWED_HOSTS = [
     "olailongbackend.onrender.com",
 ]
 
-# ─── CORS & CSRF ─────────────────────────────────────────────────────
+# ─── CORS & CSRF (UPDATED) ──────────────────────────────────────────
+# Read frontend URL from environment
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://olailongmarket-pwa.onrender.com")
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    os.getenv("FRONTEND_URL", "https://olailongmarket-pwa.onrender.com"),
+    FRONTEND_URL,
 ]
+
+# ✅ Explicitly allow common headers – this fixes many CORS issues
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
 CORS_ALLOW_CREDENTIALS = True
+
+# 🔓 For DEBUG only – uncomment to allow all origins (temporary testing)
+# CORS_ALLOW_ALL_ORIGINS = True   # ⚠️ Remove for production
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "https://olailongmarket-backend.onrender.com",
@@ -99,7 +119,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",   # ✅ Correct position
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
