@@ -14,26 +14,31 @@ import cloudinary.uploader
 import cloudinary.api
 
 # ─── Unfold Admin Compatibility Patch ─────────────────────────────────
-# ─── Unfold Admin Compatibility Patch ─────────────────────────────────
+# Patch BOTH InclusionAdminNode classes – the one from Django admin and the one from unfold.
+# This ensures the constructor always receives 'parser' and 'token' correctly.
+
 from django.contrib.admin.templatetags import admin_list
+from unfold.templatetags import unfold_list
 
-original_init = admin_list.InclusionAdminNode.__init__
+def make_tolerant(cls):
+    original_init = cls.__init__
 
-def tolerant_unfold_node_init(self, *args, **kwargs):
-    """
-    Accept any arguments, extract parser and token from the positional args,
-    and forward them to the original __init__.
-    """
-    if len(args) >= 2:
-        parser = args[0]
-        token = args[1]
-        rest = args[2:]
-        return original_init(self, parser, token, *rest, **kwargs)
-    else:
-        # Fallback – just pass everything as-is
+    def tolerant_init(self, *args, **kwargs):
+        # If called with at least two positional args, assume they are parser and token.
+        if len(args) >= 2:
+            parser = args[0]
+            token = args[1]
+            rest = args[2:]
+            return original_init(self, parser, token, *rest, **kwargs)
+        # Fallback: pass everything as-is (unlikely but safe)
         return original_init(self, *args, **kwargs)
 
-admin_list.InclusionAdminNode.__init__ = tolerant_unfold_node_init
+    cls.__init__ = tolerant_init
+    return cls
+
+# Apply to both classes
+make_tolerant(admin_list.InclusionAdminNode)
+make_tolerant(unfold_list.InclusionAdminNode)
 
 # ─── Load Environment ──────────────────────────────────────────────────
 load_dotenv()
