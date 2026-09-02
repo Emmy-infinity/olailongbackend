@@ -14,15 +14,24 @@ import cloudinary.uploader
 import cloudinary.api
 
 # ─── Unfold Admin Compatibility Patch ─────────────────────────────────
+# ─── Unfold Admin Compatibility Patch ─────────────────────────────────
 from django.contrib.admin.templatetags import admin_list
 
-original_node_init = admin_list.InclusionAdminNode.__init__
+original_init = admin_list.InclusionAdminNode.__init__
 
-def tolerant_unfold_node_init(self, parser, token, *args, **kwargs):
-    try:
-        return original_node_init(self, parser, token, *args, **kwargs)
-    except TypeError:
-        return original_node_init(self, parser, *args, **kwargs)
+def tolerant_unfold_node_init(self, *args, **kwargs):
+    """
+    Accept any arguments, extract parser and token from the positional args,
+    and forward them to the original __init__.
+    """
+    if len(args) >= 2:
+        parser = args[0]
+        token = args[1]
+        rest = args[2:]
+        return original_init(self, parser, token, *rest, **kwargs)
+    else:
+        # Fallback – just pass everything as-is
+        return original_init(self, *args, **kwargs)
 
 admin_list.InclusionAdminNode.__init__ = tolerant_unfold_node_init
 
